@@ -67,3 +67,10 @@ RUN apt-get update && apt-get upgrade -y \
     && docker-php-source delete \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* /var/tmp/*
+
+# Prepare config files
+COPY php-custom.ini /usr/local/etc/php/conf.d/custom.ini
+COPY fpm.conf /usr/local/etc/php-fpm.d/zzz-fpm.conf
+
+# Set working dir
+WORKDIR /var/www/html
