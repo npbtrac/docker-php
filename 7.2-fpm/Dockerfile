@@ -6,7 +6,7 @@ FROM php:7.2.26-fpm-buster
 LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
 
 RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
     g++ \
     libbz2-dev \
     libc-client-dev \
@@ -60,6 +60,7 @@ RUN apt-get update && apt-get upgrade -y \
     && pecl install memcached && docker-php-ext-enable memcached \
     && pecl install mongodb && docker-php-ext-enable mongodb \
     && pecl install redis && docker-php-ext-enable redis \
+    && pecl install xdebug && docker-php-ext-enable xdebug \
     && pecl install yaml && docker-php-ext-enable yaml \
     && yes '' | pecl install imagick && docker-php-ext-enable imagick \
     && pecl install mcrypt-1.0.1 && docker-php-ext-enable mcrypt \
