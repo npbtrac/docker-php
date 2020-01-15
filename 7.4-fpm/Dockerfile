@@ -65,7 +65,5 @@ RUN apt-get update && apt-get upgrade -y \
     && pecl install yaml && docker-php-ext-enable yaml \
     && yes '' | pecl install imagick && docker-php-ext-enable imagick \
     && docker-php-source delete \
-    && apt-get remove -y g++ wget \
-    && apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* /var/tmp/*
