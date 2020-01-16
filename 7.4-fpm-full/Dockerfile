@@ -1,76 +1,13 @@
-FROM php:7.4.1-fpm-buster
-
-# Credits
-# https://github.com/nanoninja/php-fpm
-
-LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
+FROM npbtrac/php:7.4-fpm
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     build-essential \
-    g++ \
     git \
-    libbz2-dev \
-    libc-client-dev \
-    libcurl4-gnutls-dev \
-    libedit-dev \
-    libfreetype6-dev \
     libglib2.0-dev \
-    libicu-dev \
-    libjpeg62-turbo-dev \
-    libkrb5-dev \
-    libldap2-dev \
-    libldb-dev \
-    libmagickwand-dev \
-    libmcrypt-dev \
-    libmemcached-dev \
-    libpng-dev \
-    libpq-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libreadline-dev \
-    libxslt1-dev \
-    libyaml-dev \
-    libzip-dev \
-    memcached \
-    python \
-    wget \
-    unzip \
-    zlib1g-dev \
-    && docker-php-ext-install -j$(nproc) \
-    bcmath \
-    bz2 \
-    calendar \
-    exif \
-    gettext \
-    mysqli \
-    opcache \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    soap \
-    sockets \
-    xmlrpc \
-    xsl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd \
-    && PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install -j$(nproc) imap \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install -j$(nproc) intl \
-    && docker-php-ext-configure ldap \
-    && docker-php-ext-install ldap \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip \
-    && pecl install memcached && docker-php-ext-enable memcached \
-    && pecl install mongodb && docker-php-ext-enable mongodb \
-    && pecl install redis && docker-php-ext-enable redis \
-    && pecl install xdebug && docker-php-ext-enable xdebug \
-    && pecl install yaml && docker-php-ext-enable yaml \
-    && yes '' | pecl install imagick && docker-php-ext-enable imagick \
-    && docker-php-source delete \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/*
+    python
+
+# Todo: Extension ioncube is not available for PHP 7.4 so far
 
 # Install depot_tools first (needed for source checkout)
 RUN cd /tmp && git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
@@ -105,9 +42,6 @@ RUN echo extension=v8js.so >> /usr/local/etc/php/conf.d/v8js.ini
 RUN curl -L -o /usr/local/bin/phpunit https://phar.phpunit.de/phpunit.phar
 RUN chmod +x /usr/local/bin/phpunit
 
-# Extension ioncube is not available for PHP 7.4 so far
-
-
 # Install composer
 RUN curl -sS "https://getcomposer.org/installer" | php
 RUN mv composer.phar /usr/local/bin/composer
@@ -119,3 +53,10 @@ RUN composer global require hirak/prestissimo
 RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 RUN chmod +x wp-cli.phar
 RUN mv wp-cli.phar /usr/local/bin/wp
+
+# Prepare config files
+COPY php-custom.ini /usr/local/etc/php/conf.d/custom.ini
+COPY fpm.conf /usr/local/etc/php-fpm.d/zzz-fpm.conf
+
+# Set working dir
+WORKDIR /var/www/html

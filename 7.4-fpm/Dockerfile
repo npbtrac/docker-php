@@ -1,8 +1,5 @@
 FROM php:7.4.1-fpm-buster
 
-# Credits
-# https://github.com/nanoninja/php-fpm
-
 LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
 
 RUN apt-get update && apt-get upgrade -y \
@@ -60,6 +57,7 @@ RUN apt-get update && apt-get upgrade -y \
     && docker-php-ext-install zip \
     && pecl install memcached && docker-php-ext-enable memcached \
     && pecl install mongodb && docker-php-ext-enable mongodb \
+    && pecl install phalcon && docker-php-ext-enable psr phalcon \
     && pecl install redis && docker-php-ext-enable redis \
     && pecl install xdebug && docker-php-ext-enable xdebug \
     && pecl install yaml && docker-php-ext-enable yaml \
@@ -67,3 +65,10 @@ RUN apt-get update && apt-get upgrade -y \
     && docker-php-source delete \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* /var/tmp/*
+
+# Prepare config files
+COPY php-custom.ini /usr/local/etc/php/conf.d/custom.ini
+COPY fpm.conf /usr/local/etc/php-fpm.d/zzz-fpm.conf
+
+# Set working dir
+WORKDIR /var/www/html

@@ -1,8 +1,5 @@
 FROM php:7.2.26-fpm-buster
 
-# Credits
-# https://github.com/nanoninja/php-fpm
-
 LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
 
 RUN apt-get update && apt-get upgrade -y \
@@ -59,6 +56,7 @@ RUN apt-get update && apt-get upgrade -y \
     zip \
     && pecl install memcached && docker-php-ext-enable memcached \
     && pecl install mongodb && docker-php-ext-enable mongodb \
+    && pecl install phalcon && docker-php-ext-enable psr phalcon \
     && pecl install redis && docker-php-ext-enable redis \
     && pecl install xdebug && docker-php-ext-enable xdebug \
     && pecl install yaml && docker-php-ext-enable yaml \
