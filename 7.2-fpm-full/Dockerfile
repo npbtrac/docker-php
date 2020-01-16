@@ -8,11 +8,9 @@ RUN apt-get update && apt-get upgrade -y \
     python
 
 # Install ioncube
+COPY ../common/ioncube_loader_lin_7.2.so /tmp/
 RUN cd /tmp \
-    && curl -o ioncube.tar.gz http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-    && tar -xvvzf ioncube.tar.gz \
-    && mv ioncube/ioncube_loader_lin_7.2.so /usr/local/lib/php/extensions/* \
-    && rm -Rf ioncube.tar.gz ioncube \
+    && mv ioncube_loader_lin_7.2.so /usr/local/lib/php/extensions/* \
     && echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20170718/ioncube_loader_lin_7.2.so" > /usr/local/etc/php/conf.d/00_docker-php-ext-ioncube_loader_lin_7.2.ini
 
 # Install depot_tools first (needed for source checkout)
@@ -45,20 +43,25 @@ RUN cd /tmp/v8js && make install
 RUN echo extension=v8js.so >> /usr/local/etc/php/conf.d/v8js.ini
 
 # Install phpunit
-RUN curl -L -o /usr/local/bin/phpunit https://phar.phpunit.de/phpunit.phar
-RUN chmod +x /usr/local/bin/phpunit
+COPY ../common/phpunit.phar /tmp/
+RUN cd /tmp \
+    && mv phpunit.phar /usr/local/bin/phpunit \
+    && chmod +x /usr/local/bin/phpunit
 
 # Install composer
-RUN curl -sS "https://getcomposer.org/installer" | php
-RUN mv composer.phar /usr/local/bin/composer
+COPY ../common/composer.phar /tmp/
+RUN cd /tmp \
+    && mv composer.phar /usr/local/bin/composer \
+    && chmod +x /usr/local/bin/composer
 
 # https://github.com/hirak/prestissimo
 RUN composer global require hirak/prestissimo
 
 # Install wp-cli
-RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-RUN chmod +x wp-cli.phar
-RUN mv wp-cli.phar /usr/local/bin/wp
+COPY ../common/wp-cli.phar /tmp/
+RUN cd /tmp \
+    && mv wp-cli.phar /usr/local/bin/wp \
+    && chmod +x /usr/local/bin/wp
 
 # Prepare config files
 COPY php-custom.ini /usr/local/etc/php/conf.d/custom.ini
