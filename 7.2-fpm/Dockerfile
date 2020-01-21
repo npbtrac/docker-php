@@ -1,74 +1,25 @@
-FROM php:7.2.26-fpm-buster
+FROM npbtrac/php:7.2-cli
 
-LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
+ENV PHP_RUN_DIR=/run/php \
+    PHP_LOG_DIR=/var/log/php \
+    PHP_CONF_DIR=/etc/php/7.2 \
+    PHP_DATA_DIR=/var/www/html
 
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends \
-    g++ \
-    libbz2-dev \
-    libc-client-dev \
-    libcurl4-gnutls-dev \
-    libedit2 \
-    libfreetype6-dev \
-    libicu-dev \
-    libjpeg62-turbo-dev \
-    libkrb5-dev \
-    libldap2-dev \
-    libmagickwand-dev \
-    libmcrypt-dev \
-    libmemcached-dev \
-    libpq-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libreadline-dev \
-    libxslt1-dev \
-    libyaml-dev \
-    memcached \
-    wget \
-    unzip \
-    zlib1g-dev \
-    && docker-php-ext-configure gd \
-    --with-freetype-dir=/usr/include/ \
-    --with-jpeg-dir=/usr/include/ \
-    --with-png-dir=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install -j$(nproc) imap \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install -j$(nproc) intl \
-    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
-    && docker-php-ext-install ldap \
-    && docker-php-ext-install -j$(nproc) \
-    bcmath \
-    bz2 \
-    calendar \
-    exif \
-    gettext \
-    mysqli \
-    opcache \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    soap \
-    sockets \
-    xmlrpc \
-    xsl \
-    zip \
-    && pecl install memcached && docker-php-ext-enable memcached \
-    && pecl install mongodb && docker-php-ext-enable mongodb \
-    && pecl install phalcon && docker-php-ext-enable psr phalcon \
-    && pecl install redis && docker-php-ext-enable redis \
-    && pecl install xdebug && docker-php-ext-enable xdebug \
-    && pecl install yaml && docker-php-ext-enable yaml \
-    && yes '' | pecl install imagick && docker-php-ext-enable imagick \
-    && pecl install mcrypt-1.0.1 && docker-php-ext-enable mcrypt \
-    && docker-php-source delete \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/*
+RUN apt-get update -y \
+    && apt-get install -y php7.2-fpm php7.2-xdebug \
+    && mkdir -p ${PHP_LOG_DIR} ${PHP_RUN_DIR}
 
-# Prepare config files
-COPY php-custom.ini /usr/local/etc/php/conf.d/custom.ini
-COPY fpm.conf /usr/local/etc/php-fpm.d/zzz-fpm.conf
+COPY ./php-fpm.conf ${PHP_CONF_DIR}/fpm/php-fpm.conf
+COPY ./www.conf ${PHP_CONF_DIR}/fpm/pool.d/www.conf
+COPY ./php-custom.ini ${PHP_CONF_DIR}/fpm/conf.d/php-custom.ini
+
+RUN sed -i "s~PHP_RUN_DIR~${PHP_RUN_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
+    && sed -i "s~PHP_LOG_DIR~${PHP_LOG_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
+    && chown www-data:www-data ${PHP_DATA_DIR} -Rf
 
 # Set working dir
-WORKDIR /var/www/html
+WORKDIR ${PHP_DATA_DIR}
+
+# Start php-fpm servic
+EXPOSE 9000
+CMD ["/usr/sbin/php-fpm7.2"]

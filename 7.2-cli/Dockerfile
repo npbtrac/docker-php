@@ -1,129 +1,73 @@
-FROM php:7.2.26-cli-buster
-
+FROM ubuntu:bionic
 LABEL maintainer="Trac Nguyen <npbtrac@yahoo.com>"
 
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends \
-    build-essential \
-    g++ \
-    git \
-    libbz2-dev \
-    libc-client-dev \
-    libcurl4-gnutls-dev \
-    libedit-dev \
-    libfreetype6-dev \
-    libglib2.0-dev \
-    libicu-dev \
-    libjpeg62-turbo-dev \
-    libkrb5-dev \
-    libldap2-dev \
-    libldb-dev \
-    libmagickwand-dev \
-    libmcrypt-dev \
-    libmemcached-dev \
-    libpng-dev \
-    libpq-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libreadline-dev \
-    libxslt1-dev \
-    libyaml-dev \
-    libzip-dev \
-    memcached \
-    python \
-    wget \
-    unzip \
-    zlib1g-dev \
-    && docker-php-ext-install -j$(nproc) \
-    bcmath \
-    bz2 \
-    calendar \
-    exif \
-    gettext \
-    mysqli \
-    opcache \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    soap \
-    sockets \
-    xmlrpc \
-    xsl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd \
-    && PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install -j$(nproc) imap \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install -j$(nproc) intl \
-    && docker-php-ext-configure ldap \
-    && docker-php-ext-install ldap \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip \
-    && pecl install memcached && docker-php-ext-enable memcached \
-    && pecl install mongodb && docker-php-ext-enable mongodb \
-    && pecl install phalcon && docker-php-ext-enable psr phalcon \
-    && pecl install redis && docker-php-ext-enable redis \
-    && pecl install yaml && docker-php-ext-enable yaml \
-    && yes '' | pecl install imagick && docker-php-ext-enable imagick \
-    && docker-php-source delete \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/*
+ENV OS_LOCALE="en_US.UTF-8" \
+    DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y locales && locale-gen ${OS_LOCALE}
+ENV LANG=${OS_LOCALE} \
+    LANGUAGE=${OS_LOCALE} \
+    LC_ALL=${OS_LOCALE}
+ENV PHP_RUN_DIR=/run/php \
+    PHP_LOG_DIR=/var/log/php \
+    PHP_CONF_DIR=/etc/php/7.2 \
+    PHP_DATA_DIR=/var/www/html
 
-# Install ioncube
-COPY ../common/ioncube_loader_lin_7.2.so /tmp/
-RUN cd /tmp \
-    && mv ioncube_loader_lin_7.2.so /usr/local/lib/php/extensions/* \
-    && echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20170718/ioncube_loader_lin_7.2.so" > /usr/local/etc/php/conf.d/00_docker-php-ext-ioncube_loader_lin_7.2.ini
+RUN \
+    BUILD_DEPS='software-properties-common' \
+    && dpkg-reconfigure locales \
+    # Install common libraries
+    && apt-get install --no-install-recommends -y $BUILD_DEPS \
+    && add-apt-repository -y ppa:ondrej/php \
+    && apt-get update -y
 
-# Install depot_tools first (needed for source checkout)
-RUN cd /tmp && git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-ENV PATH /tmp/depot_tools:$PATH
+# Install PHP libraries
+# php7.2-mcrypt not support and move to PECL. Use extension Sodium: http://php.net/manual/book.sodium.php
+RUN apt-get install -y \
+    build-essential curl git python libglib2.0-dev wget \
+    make g++ bzip2 xz-utils pkg-config wget \
+    php7.2-cli php7.2-dev php7.2-readline php7.2-mbstring php7.2-memcached php7.2-zip \
+    php7.2-imagick php7.2-intl php7.2-json php7.2-curl php7.2-gd php7.2-pgsql php7.2-mysql php-pear \
+    php7.2-psr php7.2-redis php7.2-xml php7.2-yaml \
+    php7.0-phalcon \
+    && mkdir -p ${PHP_LOG_DIR} ${PHP_RUN_DIR}
 
-# Download v8
-RUN cd /tmp && fetch v8
-RUN cd /tmp/v8 && gclient sync
+# Install v8js (crazy one)
+RUN add-apt-repository -y ppa:stesie/libv8 \
+    && apt-get update -y \
+    && apt-get install libv8-7.5 libv8-7.5-dev \
+    && echo "/opt/libv8-7.5/lib" | tee -a /etc/ld.so.conf.d/libv8.conf \
+    && ldconfig \
+    && printf "\/opt/libv8-7.5\n" | CFLAGS=-w CPPFLAGS=-w pecl install v8js-2.1.1 \
+    && echo extension=v8js.so > /etc/php/7.2/cli/conf.d/99-v8js.ini
 
-# Setup GN
-RUN cd /tmp/v8 && tools/dev/v8gen.py -vv x64.release -- is_component_build=true
+# Cleaning
+RUN apt-get purge -y --auto-remove $BUILD_DEPS \
+    && apt-get autoremove -y && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Build
-RUN cd /tmp/v8 && ninja -C out.gn/x64.release/
+COPY ./php-fpm.conf ${PHP_CONF_DIR}/fpm/php-fpm.conf
+COPY ./www.conf ${PHP_CONF_DIR}/fpm/pool.d/www.conf
+COPY ./php-custom.ini ${PHP_CONF_DIR}/fpm/conf.d/php-custom.ini
 
-# Install to /opt/v8/
-RUN mkdir -p /opt/v8/lib
-RUN mkdir /opt/v8/include
-RUN cd /tmp/v8 && cp out.gn/x64.release/lib*.so out.gn/x64.release/*_blob.bin /opt/v8/lib/
-RUN cd /tmp/v8 && cp -R include/* /opt/v8/include/
-
-# Install v8js
-RUN cd /tmp && git clone https://github.com/phpv8/v8js.git
-RUN cd /tmp/v8js && phpize
-RUN cd /tmp/v8js && ./configure --with-v8js=/opt/v8
-RUN cd /tmp/v8js && make
-RUN cd /tmp/v8js && make test
-RUN cd /tmp/v8js && make install
-RUN echo extension=v8js.so >> /usr/local/etc/php/conf.d/v8js.ini
+RUN sed -i "s~PHP_RUN_DIR~${PHP_RUN_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
+    && sed -i "s~PHP_LOG_DIR~${PHP_LOG_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
+    && chown www-data:www-data ${PHP_DATA_DIR} -Rf
 
 # Install phpunit
-COPY ../common/phpunit.phar /tmp/
+COPY phpunit.phar /tmp/
 RUN cd /tmp \
     && mv phpunit.phar /usr/local/bin/phpunit \
     && chmod +x /usr/local/bin/phpunit
 
 # Install composer
-COPY ../common/composer.phar /tmp/
-RUN cd /tmp \
-    && mv composer.phar /usr/local/bin/composer \
-    && chmod +x /usr/local/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --version=1.8.4 --install-dir=/usr/local/bin --filename=composer \
+    && chmod +x /usr/local/bin/composer \
+    && composer global require hirak/prestissimo \
+    && composer global require codeception/codeception --dev
 
-# https://github.com/hirak/prestissimo
-RUN composer global require hirak/prestissimo
+# Install ioncube, it needs to be loaded first so be sure to name it with correct prefix
+COPY ioncube_loader_lin_7.2.so /tmp/
+RUN mv /tmp/ioncube_loader_lin_7.2.so /usr/lib/php/20170718/ \
+    && echo "zend_extension=ioncube_loader_lin_7.2.so" > /etc/php/7.2/cli/conf.d/00-ioncube_loader_lin_7.2.ini
 
-# Install wp-cli
-COPY ../common/wp-cli.phar /tmp/
-RUN cd /tmp \
-    && mv wp-cli.phar /usr/local/bin/wp \
-    && chmod +x /usr/local/bin/wp
-
-# Set working dir
-WORKDIR /var/www/html
+WORKDIR ${PHP_DATA_DIR}
