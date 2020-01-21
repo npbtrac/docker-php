@@ -7,6 +7,8 @@ ENV PHP_RUN_DIR=/run/php \
 
 RUN apt-get update -y \
     && apt-get install -y php7.2-fpm php7.2-xdebug \
+    && echo "zend_extension=ioncube_loader_lin_7.2.so" > /etc/php/7.2/fpm/conf.d/00-ioncube_loader_lin_7.2.ini \
+    && echo extension=v8js.so > /etc/php/7.2/fpm/conf.d/99-v8js.ini \
     && mkdir -p ${PHP_LOG_DIR} ${PHP_RUN_DIR}
 
 COPY ./php-fpm.conf ${PHP_CONF_DIR}/fpm/php-fpm.conf

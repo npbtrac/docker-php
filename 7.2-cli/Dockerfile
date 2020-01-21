@@ -38,20 +38,12 @@ RUN add-apt-repository -y ppa:stesie/libv8 \
     && echo "/opt/libv8-7.5/lib" | tee -a /etc/ld.so.conf.d/libv8.conf \
     && ldconfig \
     && printf "\/opt/libv8-7.5\n" | CFLAGS=-w CPPFLAGS=-w pecl install v8js-2.1.1 \
-    && echo extension=v8js.so > /etc/php/7.2/cli/conf.d/99-v8js.ini
+    && echo extension=v8js.so > ${PHP_CONF_DIR}/cli/conf.d/99-v8js.ini
 
 # Cleaning
 RUN apt-get purge -y --auto-remove $BUILD_DEPS \
     && apt-get autoremove -y && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-COPY ./php-fpm.conf ${PHP_CONF_DIR}/fpm/php-fpm.conf
-COPY ./www.conf ${PHP_CONF_DIR}/fpm/pool.d/www.conf
-COPY ./php-custom.ini ${PHP_CONF_DIR}/fpm/conf.d/php-custom.ini
-
-RUN sed -i "s~PHP_RUN_DIR~${PHP_RUN_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
-    && sed -i "s~PHP_LOG_DIR~${PHP_LOG_DIR}~g" ${PHP_CONF_DIR}/fpm/php-fpm.conf \
-    && chown www-data:www-data ${PHP_DATA_DIR} -Rf
 
 # Install phpunit
 COPY phpunit.phar /tmp/
