@@ -30,6 +30,7 @@ RUN apt-get install -y \
     php7.2-psr php7.2-redis php7.2-xml php7.2-yaml \
     php7.0-phalcon \
     && mkdir -p ${PHP_LOG_DIR} ${PHP_RUN_DIR}
+RUN apt-get update -y && apt-get install -y php7.2-memcache php7.2-mongodb php7.2-tidy php7.2-soap
 
 # Install v8js (crazy one)
 RUN add-apt-repository -y ppa:stesie/libv8 \
@@ -39,6 +40,11 @@ RUN add-apt-repository -y ppa:stesie/libv8 \
     && ldconfig \
     && printf "\/opt/libv8-7.5\n" | CFLAGS=-w CPPFLAGS=-w pecl install v8js-2.1.1 \
     && echo extension=v8js.so > ${PHP_CONF_DIR}/cli/conf.d/99-v8js.ini
+
+# Install ioncube, it needs to be loaded first so be sure to name it with correct prefix
+COPY ioncube_loader_lin_7.2.so /tmp/
+RUN mv /tmp/ioncube_loader_lin_7.2.so /usr/lib/php/20170718/ \
+    && echo "zend_extension=ioncube_loader_lin_7.2.so" > /etc/php/7.2/cli/conf.d/00-ioncube_loader_lin_7.2.ini
 
 # Cleaning
 RUN apt-get purge -y --auto-remove $BUILD_DEPS \
@@ -57,9 +63,14 @@ RUN curl -sS https://getcomposer.org/installer | php -- --version=1.8.4 --instal
     && composer global require hirak/prestissimo \
     && composer global require codeception/codeception --dev
 
-# Install ioncube, it needs to be loaded first so be sure to name it with correct prefix
-COPY ioncube_loader_lin_7.2.so /tmp/
-RUN mv /tmp/ioncube_loader_lin_7.2.so /usr/lib/php/20170718/ \
-    && echo "zend_extension=ioncube_loader_lin_7.2.so" > /etc/php/7.2/cli/conf.d/00-ioncube_loader_lin_7.2.ini
+# Create aliases
+# codecept
+RUN echo '#!/bin/bash\n/root/.composer/vendor/bin/codecept "$@"' > /usr/bin/codecept \
+    && chmod +x /usr/bin/codecept
+
+# wp-cli (need to make it work as root)
+COPY wp-cli.phar /root/
+RUN echo '#!/bin/bash\n/root/wp-cli.phar --allow-root "$@"' > /usr/bin/wp \
+    && chmod +x /root/wp-cli.phar /usr/bin/wp
 
 WORKDIR ${PHP_DATA_DIR}

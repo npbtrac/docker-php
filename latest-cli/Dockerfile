@@ -27,10 +27,13 @@ RUN apt-get install -y \
     php-cli php-dev php-readline php-mbstring php-memcached php-zip \
     php-imagick php-intl php-json php-curl php-gd php-pgsql php-mysql php-pear \
     php-psr php-redis php-xml php-yaml \
-    php7.0-phalcon \
+    php-phalcon \
     && mkdir -p ${PHP_LOG_DIR} ${PHP_RUN_DIR}
+RUN apt-get update -y && apt-get install -y php-memcache php-mongodb php-tidy php-soap
 
 # Todo: Install v8js (crazy one) for PHP 7.4
+
+# Todo: Install ioncube for PHP 7.4
 
 # Cleaning
 RUN apt-get purge -y --auto-remove $BUILD_DEPS \
@@ -49,6 +52,14 @@ RUN curl -sS https://getcomposer.org/installer | php -- --version=1.8.4 --instal
     && composer global require hirak/prestissimo \
     && composer global require codeception/codeception --dev
 
-# Todo: Install ioncube for PHP 7.4
+# Create aliases
+# codecept
+RUN echo '#!/bin/bash\n/root/.composer/vendor/bin/codecept "$@"' > /usr/bin/codecept \
+    && chmod +x /usr/bin/codecept
+
+# wp-cli (need to make it work as root)
+COPY wp-cli.phar /root/
+RUN echo '#!/bin/bash\n/root/wp-cli.phar --allow-root "$@"' > /usr/bin/wp \
+    && chmod +x /root/wp-cli.phar /usr/bin/wp
 
 WORKDIR ${PHP_DATA_DIR}
