@@ -25,7 +25,7 @@ RUN \
 RUN apt-get install -y \
     build-essential curl git python libglib2.0-dev wget \
     make g++ bzip2 xz-utils pkg-config wget \
-    php7.2-cli php7.2-dev php7.2-readline php7.2-mbstring php7.2-memcached php7.2-zip \
+    php7.2-cli php7.2-apcu php7.2-dev php7.2-readline php7.2-mbstring php7.2-memcached php7.2-zip \
     php7.2-imagick php7.2-intl php7.2-json php7.2-curl php7.2-gd php7.2-pgsql php7.2-mysql php-pear \
     php7.2-psr php7.2-redis php7.2-xml php7.2-yaml \
     php7.0-phalcon \
@@ -46,11 +46,6 @@ COPY ioncube_loader_lin_7.2.so /tmp/
 RUN mv /tmp/ioncube_loader_lin_7.2.so /usr/lib/php/20170718/ \
     && echo "zend_extension=ioncube_loader_lin_7.2.so" > /etc/php/7.2/cli/conf.d/00-ioncube_loader_lin_7.2.ini
 
-# Cleaning
-RUN apt-get purge -y --auto-remove $BUILD_DEPS \
-    && apt-get autoremove -y && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install phpunit
 COPY phpunit.phar /tmp/
 RUN cd /tmp \
@@ -58,19 +53,22 @@ RUN cd /tmp \
     && chmod +x /usr/local/bin/phpunit
 
 # Install composer
-RUN curl -sS https://getcomposer.org/installer | php -- --version=1.8.4 --install-dir=/usr/local/bin --filename=composer \
-    && chmod +x /usr/local/bin/composer \
-    && composer global require hirak/prestissimo \
-    && composer global require codeception/codeception --dev
+RUN curl -sS https://getcomposer.org/installer | php -- --version=1.10.9 --install-dir=/usr/local/bin --filename=composer \
+    && chmod +x /usr/local/bin/composer
 
-# Create aliases
-# codecept
-RUN echo '#!/bin/bash\n/root/.composer/vendor/bin/codecept "$@"' > /usr/bin/codecept \
-    && chmod +x /usr/bin/codecept
+# Node and yarn
+RUN curl -sL https://deb.nodesource.com/setup_12.x  | bash -
+RUN apt-get -y install nodejs
+RUN npm install -g yarn
 
-# wp-cli (need to make it work as root)
-COPY wp-cli.phar /root/
-RUN echo '#!/bin/bash\n/root/wp-cli.phar --allow-root "$@"' > /usr/bin/wp \
-    && chmod +x /root/wp-cli.phar /usr/bin/wp
+# Making composer faster
+RUN mkdir ~/.composer/cache \
+    && echo "{}" > ~/.composer/composer.json \
+    && composer global require hirak/prestissimo
+
+# Cleaning
+RUN apt-get purge -y --auto-remove $BUILD_DEPS \
+    && apt-get autoremove -y && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR ${PHP_DATA_DIR}
