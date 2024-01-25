@@ -1,2 +1,5 @@
 .idea
 .DS_Store
+.vscode
+docker-compose.override.yml
+.env

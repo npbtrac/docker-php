@@ -1,3 +1,4 @@
-Docker containers for PHP FPM on Ubuntu
-- Stable version: 7.2
-- Latest version: 7.4
+Docker containers for PHP CLI and FPM on Ubuntu, https://hub.docker.com/u/npbtrac.
+
+### Credits
+- https://github.com/serversideup/docker-php
