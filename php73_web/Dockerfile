@@ -114,7 +114,7 @@ RUN sed -i "s/upload_max_filesize = .*/upload_max_filesize = 128M/" /usr/local/e
 RUN sed -i "s/post_max_size = .*/post_max_size = 128M/" /usr/local/etc/php/php.ini
 
 RUN apt-get update -y
-RUN apt-get install -y nginx
+RUN apt-get install -y nginx zip unzip git
 
 # As application is put in as volume we do all needed operation on run
 COPY ./php73_web/scripts /scripts
@@ -122,11 +122,28 @@ COPY ./php73_web/scripts /scripts
 # Add some custom config
 RUN mkdir -p /etc/nginx/site-opts.d/
 RUN mkdir -p /etc/nginx/server-opts.d/
+
+# Putting config files to their locations
+COPY ./config/nginx/http.conf /etc/nginx/site-opts.d/http.conf
+COPY ./config/nginx/https.conf /etc/nginx/site-opts.d/https.conf
+
 COPY ./php73_web/server-opts.d/ /etc/nginx/server-opts.d/
 COPY ./php73_web/default.conf /etc/nginx/sites-available/default
 COPY ./php73_web/conf.d/php.ini ${PHP_INI_DIR}/conf.d/php.ini
 
 RUN chmod 755 /scripts/*.sh
+
+### Composer
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php -r "if (hash_file('sha384', 'composer-setup.php') === 'e21205b207c3ff031906575712edab6f13eb0b361f2085f1f1237b7126d785e826a450292b6cfd1d64d92e6563bbde02') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" \
+    && php composer-setup.php \
+    && php -r "unlink('composer-setup.php');"
+RUN chmod +x composer.phar
+RUN mv composer.phar /usr/local/bin/composer
+
+# Set home folder for composer to store cached, credentials...
+ARG COMPOSER_HOME="/root/.composer"
+ENV COMPOSER_HOME="/root/.composer"
 
 # Needed for docker-machine
 RUN usermod -u 1000 www-data

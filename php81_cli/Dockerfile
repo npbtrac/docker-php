@@ -1,15 +1,13 @@
 FROM ubuntu:22.04
 LABEL Maintainer="Trac Nguyen <npbtrac@yahoo.com>" \
-      Description="Container for PHP 7.3 cli"
+      Description="Container for PHP 8.1 cli"
 
 # Update before installing more
 RUN apt update -y
-RUN apt install -y --no-install-recommends software-properties-common
-RUN apt install -y --no-install-recommends gnupg2 ca-certificates
 
-RUN add-apt-repository -y ppa:ondrej/php
-
-RUN DEBIAN_FRONTEND=noninteractive apt install -y zip unzip git curl wget
+RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends curl gnupg2 \
+    ca-certificates software-properties-common \
+    && add-apt-repository -y ppa:ondrej/php
 
 # Remove un-needed things
 RUN apt auto-remove -y \
@@ -18,30 +16,30 @@ RUN apt auto-remove -y \
 
 # Install PHP
 RUN apt update -y
-RUN DEBIAN_FRONTEND=noninteractive apt install -y php7.3-cli \
-    php7.3-bcmath \
-    php7.3-common \
-    php7.3-curl \
-    php7.3-gd \
-    php7.3-gettext \
-    php7.3-intl \
-    php7.3-json \
-    php7.3-mbstring \
-    php7.3-mysql \
-    php7.3-mysqli \
-    php7.3-redis \
-    php7.3-soap \
-    php7.3-pdo \
-    php7.3-pgsql \
-    php7.3-sqlite3 \
-    php7.3-xml \
-    php7.3-zip \
-    php7.3-memcached \
-    php7.3-pgsql \
-    php7.3-imagick \
-    php7.3-apcu \
-    php7.3-mcrypt \
-    php7.3-xdebug
+RUN DEBIAN_FRONTEND=noninteractive apt install -y zip unzip git curl wget
+RUN DEBIAN_FRONTEND=noninteractive apt install -y php8.1-cli \
+    php8.1-bcmath \
+    php8.1-common \
+    php8.1-curl \
+    php8.1-gd \
+    php8.1-gettext \
+    php8.1-intl \
+    php8.1-mbstring \
+    php8.1-mysql \
+    php8.1-mysqli \
+    php8.1-redis \
+    php8.1-soap \
+    php8.1-pdo \
+    php8.1-pgsql \
+    php8.1-sqlite3 \
+    php8.1-xml \
+    php8.1-zip \
+    php8.1-memcached \
+    php8.1-pgsql \
+    php8.1-imagick \
+    php8.1-apcu \
+    php8.1-mcrypt \
+    php8.1-xdebug
 
 RUN mkdir -p /app
 RUN cd /app

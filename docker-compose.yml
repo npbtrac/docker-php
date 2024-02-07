@@ -11,8 +11,8 @@ services:
     env_file:
       - ./.env
     ports:
-      - ${HTTP_EXPOSING_PORT_PREFIX}80:80
-      - ${HTTP_EXPOSING_PORT_PREFIX}43:443
+      - ${HTTP_EXPOSING_PORT_PREFIX}73:80
+      - ${HTTP_EXPOSING_PORT_PREFIX}473:443
     environment:
       - PHP_UPLOAD_MAX_FILEZISE=128M
       - PHP_POST_MAX_SIZE=128M
@@ -36,8 +36,8 @@ services:
     env_file:
       - ./.env
     ports:
-      - ${HTTP_EXPOSING_PORT_PREFIX}80:80
-      - ${HTTP_EXPOSING_PORT_PREFIX}43:443
+      - ${HTTP_EXPOSING_PORT_PREFIX}74:80
+      - ${HTTP_EXPOSING_PORT_PREFIX}474:443
     environment:
       - PHP_UPLOAD_MAX_FILEZISE=128M
       - PHP_POST_MAX_SIZE=128M
@@ -60,7 +60,30 @@ services:
       - ./.env
     ports:
       - ${HTTP_EXPOSING_PORT_PREFIX}80:80
-      - ${HTTP_EXPOSING_PORT_PREFIX}43:443
+      - ${HTTP_EXPOSING_PORT_PREFIX}480:443
+    environment:
+      - PHP_UPLOAD_MAX_FILEZISE=128M
+      - PHP_POST_MAX_SIZE=128M
+      - PHP_MEMORY_LIMIT=128M
+      - PHP_MAX_EXECUTION_TIME=30
+      - PHP_MAX_INPUT_TIME=30
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    
+  php81_cli:
+    build:
+      context: "./"
+      dockerfile: "./php81_cli/Dockerfile"
+  php81_web:
+    build:
+      context: "./"
+      dockerfile: "./php81_web/Dockerfile"
+    env_file:
+      - ./.env
+    ports:
+      - ${HTTP_EXPOSING_PORT_PREFIX}81:80
+      - ${HTTP_EXPOSING_PORT_PREFIX}481:443
     environment:
       - PHP_UPLOAD_MAX_FILEZISE=128M
       - PHP_POST_MAX_SIZE=128M

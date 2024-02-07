@@ -1,6 +1,6 @@
-FROM serversideup/php:8.0-fpm-nginx
+FROM serversideup/php:8.1-fpm-nginx
 LABEL Maintainer="Trac Nguyen <npbtrac@yahoo.com>" \
-      Description="Container for hosting web using PHP 8.0 (FPM) with Nginx based on ServerSideUp https://hub.docker.com/r/serversideup/php"
+      Description="Container for hosting web using PHP 8.1 (FPM) with Nginx based on ServerSideUp https://hub.docker.com/r/serversideup/php"
 
 ENV SSL_MODE="mixed"
 
@@ -8,7 +8,7 @@ ENV SSL_MODE="mixed"
 RUN apt update -y && apt upgrade -y
 
 # Install PHP packages
-RUN apt install -y php8.0-memcached php8.0-pgsql php8.0-imagick php8.0-apcu php8.0-mcrypt
+RUN apt install -y php8.1-memcached php8.1-pgsql php8.1-imagick php8.1-apcu php8.1-mcrypt
 
 # Putting config files to their locations
 COPY ./config/nginx/http.conf /etc/nginx/site-opts.d/http.conf

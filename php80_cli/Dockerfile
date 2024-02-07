@@ -5,7 +5,7 @@ LABEL Maintainer="Trac Nguyen <npbtrac@yahoo.com>" \
 # Update before installing more
 RUN apt update -y
 
-RUN apt install -y --no-install-recommends curl gnupg2 \
+RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends curl gnupg2 \
     ca-certificates software-properties-common \
     && add-apt-repository -y ppa:ondrej/php
 
@@ -15,8 +15,9 @@ RUN apt auto-remove -y \
     && apt clean
 
 # Install PHP
-RUN apt-get update \
-    && apt install -y php8.0-cli \
+RUN apt update -y
+RUN DEBIAN_FRONTEND=noninteractive apt install -y zip unzip git curl wget
+RUN DEBIAN_FRONTEND=noninteractive apt install -y php8.0-cli \
     php8.0-bcmath \
     php8.0-common \
     php8.0-curl \
@@ -40,12 +41,7 @@ RUN apt-get update \
     php8.0-mcrypt \
     php8.0-xdebug
 
-RUN mkdir -p /home/webuser
-RUN useradd --no-log-init -r -s /usr/bin/bash -d /home/webuser webuser
-RUN chown -R webuser /home/webuser
-
 RUN mkdir -p /app
-RUN chown -R webuser:root /app
 RUN cd /app
 
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
@@ -55,5 +51,8 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
 RUN chmod +x composer.phar
 RUN mv composer.phar /usr/local/bin/composer
 
-USER webuser
+# Set home folder for composer to store cached, credentials...
+ARG COMPOSER_HOME="/root/.composer"
+ENV COMPOSER_HOME="/root/.composer"
+
 WORKDIR /app
